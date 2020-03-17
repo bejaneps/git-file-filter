@@ -25,6 +25,10 @@
     section {
       margin-bottom: 10px;
     }
+
+    .col2 {
+      color: red;
+    }
   </style>
 </head>
 
@@ -35,32 +39,34 @@
     </div>
   </nav>
   <div class="container">
-    <section id="form">
-      <form action="http://127.0.0.1:7000/data" methods="get" enctype="application/x-www-form-urlencoded">
-        <div class="form-group">
-          <label for="url">Git repository URL</label>
-          <input type="text" class="form-control" id="url" placeholder="https://github.com/testname/testrepo" name="url"
-            required>
-        </div>
-        <div class="form-group">
-          <label for="commit">Commit hash</label>
-          <input type="text" class="form-control" id="commit" placeholder="9312jkasdn1230idsa" name="commit">
-        </div>
-        <div class="form-group">
-          <label for="dir">Directory</label>
-          <input type="text" class="form-control" id="dir" placeholder="some-dir-name" name="dir">
-        </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
-      </form>
-    </section>
+    <div class="jumbotron">
+      <section id="form">
+        <form action="http://127.0.0.1:7000/data" methods="get" enctype="application/x-www-form-urlencoded">
+          <div class="form-group">
+            <label for="url">Git repository URL</label>
+            <input type="text" class="form-control" id="url" placeholder="https://github.com/testname/testrepo"
+              name="url" required>
+          </div>
+          <div class="form-group">
+            <label for="commit">Commit hash</label>
+            <input type="text" class="form-control" id="commit" placeholder="9312jkasdn1230idsa" name="commit">
+          </div>
+          <div class="form-group">
+            <label for="dir">Directory</label>
+            <input type="text" class="form-control" id="dir" placeholder="some-dir-name" name="dir">
+          </div>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </section>
+    </div>
     {{if .}}
     <section id="content">
       <table class="table table-stripped table-bordered">
         <thead>
           <tr>
-            <th scope="col">{{.BaseURL}}</th>
-            <th scope="col">{{.BaseHash}}</th>
-            <th scope="col">{{.BaseDir}}</th>
+            <th scope="col" class="col2">{{.BaseURL}}</th>
+            <th scope="col" class="col2">{{.BaseHash}}</th>
+            <th scope="col" class="col2">{{.BaseDir}}</th>
           </tr>
           <tr>
             <th scope="col">#</th>
@@ -77,6 +83,13 @@
             <td>{{$v.File}}</td>
           </tr>
           {{end}}
+          <tr>
+            <th scope="row">
+              <form action="http://127.0.0.1:7000/download" methods="get" enctype="application/x-www-form-urlencoded">
+                <button type="submit" class="btn btn-secondary">Download</button>
+              </form>
+            </th>
+          </tr>
         </tbody>
       </table>
     </section>
