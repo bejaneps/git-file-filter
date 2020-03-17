@@ -12,7 +12,7 @@ import (
 	git "gopkg.in/src-d/go-git.v4"
 )
 
-var testDir = "test"
+var reposDir = "repositories"
 
 // GitCollection is a struct that holds a commit hash and filename in a git repository
 type GitCollection struct {
@@ -29,7 +29,7 @@ func GetGitCollections(url, hash, dir string) ([]GitCollection, error) {
 	var err error
 
 	// join and cleanup dir where all repos will be saved
-	path := filepath.Join(testDir, filepath.Clean(url))
+	path := filepath.Join(reposDir, filepath.Clean(url))
 
 	// clone a repo, cleanups directory name filepath.Clean() implicitly
 	r, err = git.PlainClone(path, false, &git.CloneOptions{
@@ -44,8 +44,20 @@ func GetGitCollections(url, hash, dir string) ([]GitCollection, error) {
 		return nil, errors.Wrapf(err, "(%s): cloning a git repo", op)
 	}
 
+	// convert user supplied hash to SHA1 git hash
+	var gitHash plumbing.Hash
+	if hash != "" {
+		gitHash = plumbing.NewHash(hash)
+	} else {
+		ref, err := r.Head()
+		if err != nil {
+			return nil, errors.Wrapf(err, "(%s): retrieving head commit", op)
+		}
+		gitHash = ref.Hash()
+	}
+
 	// retrieve a commit
-	commit, err := r.CommitObject(plumbing.NewHash(hash))
+	commit, err := r.CommitObject(gitHash)
 	if err != nil {
 		return nil, errors.Wrapf(err, "(%s): retrieving a commit object", op)
 	}
