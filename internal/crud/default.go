@@ -134,11 +134,13 @@ func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]collection, er
 			co.File = f.Name[strings.Index(f.Name, "/")+1:]
 			co.FileURL = url + "/blob/" + hash + "/" + dir + "/" + co.File
 
-			co.Config = isConfig(f.Name)
+			if isConfig(f.Name) {
+				co.Config = true
 
-			co.Content, err = f.Contents()
-			if err != nil {
-				return err
+				co.Content, err = f.Contents()
+				if err != nil {
+					return err
+				}
 			}
 
 			coll = append(coll, co)
@@ -164,11 +166,13 @@ func retrieveFromRoot(url, hash string, tree *object.Tree) ([]collection, error)
 		co.File = f.Name
 		co.FileURL = url + "/blob/" + hash + "/" + f.Name
 
-		co.Config = isConfig(f.Name)
+		if isConfig(f.Name) {
+			co.Config = true
 
-		co.Content, err = f.Contents()
-		if err != nil {
-			return err
+			co.Content, err = f.Contents()
+			if err != nil {
+				return err
+			}
 		}
 
 		coll = append(coll, co)

@@ -27,7 +27,7 @@
     }
 
     .col2 {
-      color: red;
+      color: cadetblue;
     }
   </style>
 </head>
@@ -91,6 +91,15 @@
             <th scope="row">
               <form action="http://127.0.0.1:7000/download" methods="get" enctype="application/x-www-form-urlencoded">
                 <button type="submit" class="btn btn-secondary">Download</button>
+              </form>
+            </th>
+            <th scope="row">
+              <form action="http://127.0.0.1:7000/regexp" methods="get" enctype="application/x-www-form-urlencoded">
+                <div class="form-group">
+                  <textarea class="form-control" name="pattern" cols="30" rows="10" required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-warning">Regexp</button>
               </form>
             </th>
           </tr>
