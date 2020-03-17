@@ -13,6 +13,7 @@ var (
 	errFormURLEmpty = errors.New("url form value is empty")
 )
 
+// TODO: display repo, commit hash and directory on top of table
 func (e *env) handleData(w http.ResponseWriter, r *http.Request) {
 	// parse values from url query
 	url := r.URL.Query().Get("url")
@@ -28,7 +29,7 @@ func (e *env) handleData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get hash and file collections
-	coll, err := crud.GetGitCollections(url, hash, dir)
+	coll, err := crud.GetGitCollection(url, hash, dir)
 	if err != nil {
 		err := e.templateFiles.ExecuteTemplate(w, "error.html", err)
 		if err != nil {

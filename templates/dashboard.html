@@ -58,13 +58,18 @@
       <table class="table table-stripped table-bordered">
         <thead>
           <tr>
+            <th scope="col">{{.BaseURL}}</th>
+            <th scope="col">{{.BaseHash}}</th>
+            <th scope="col">{{.BaseDir}}</th>
+          </tr>
+          <tr>
             <th scope="col">#</th>
             <th scope="col">Commit</th>
             <th scope="col">File</th>
           </tr>
         </thead>
         <tbody>
-          {{$data := .}}
+          {{$data := .Coll}}
           {{range $i, $v := $data}}
           <tr>
             <th scope="row">{{$i}}</th>

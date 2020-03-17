@@ -14,18 +14,28 @@ import (
 
 var reposDir = "repositories"
 
-// GitCollection is a struct that holds a commit hash and filename in a git repository
-type GitCollection struct {
+// collection holds info individual files commit hash and names
+type collection struct {
 	Hash string
 	File string
 }
 
-// GetGitCollections returns a slice of git collection
-func GetGitCollections(url, hash, dir string) ([]GitCollection, error) {
-	var op = "crud.GetGitCollections"
+// GitCollection is a struct that holds a commit hash and filename in a git repository
+type GitCollection struct {
+	BaseURL  string
+	BaseHash string
+	BaseDir  string
+
+	Coll []collection
+}
+
+// GetGitCollection returns a filled GitCollection struct
+func GetGitCollection(url, hash, dir string) (*GitCollection, error) {
+	var op = "crud.GetGitCollection"
 
 	// initialize vars, so we don't recreate them
 	r := &git.Repository{}
+	coll := &GitCollection{}
 	var err error
 
 	// join and cleanup dir where all repos will be saved
@@ -43,6 +53,7 @@ func GetGitCollections(url, hash, dir string) ([]GitCollection, error) {
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "(%s): cloning a git repo", op)
 	}
+	coll.BaseURL = url // for template
 
 	// convert user supplied hash to SHA1 git hash
 	var gitHash plumbing.Hash
@@ -55,6 +66,7 @@ func GetGitCollections(url, hash, dir string) ([]GitCollection, error) {
 		}
 		gitHash = ref.Hash()
 	}
+	coll.BaseHash = gitHash.String() // for template
 
 	// retrieve a commit
 	commit, err := r.CommitObject(gitHash)
@@ -70,44 +82,35 @@ func GetGitCollections(url, hash, dir string) ([]GitCollection, error) {
 
 	// retrieve files from specific dir
 	if dir != "" {
-		return retrieveFromDir(tree, dir), nil
+		tree.Files().ForEach(func(f *object.File) error {
+			if strings.Contains(f.Name, dir) {
+				co := collection{}
+
+				co.File = f.Name[strings.Index(f.Name, "/")+1:]
+				co.Hash = f.Hash.String()
+
+				coll.Coll = append(coll.Coll, co)
+			}
+
+			return nil
+		})
+
+		coll.BaseDir = dir
+	} else { // retrieve files from root dir
+		tree.Files().ForEach(func(f *object.File) error {
+			co := collection{}
+
+			co.File = f.Name
+			co.Hash = f.Hash.String()
+
+			coll.Coll = append(coll.Coll, co)
+
+			return nil
+		})
+
+		coll.BaseDir = "/"
 	}
 
 	// retrieve files from root
-	return retrieveFromRoot(tree), nil
-}
-
-func retrieveFromDir(tree *object.Tree, dir string) []GitCollection {
-	var coll []GitCollection
-
-	tree.Files().ForEach(func(f *object.File) error {
-		if strings.Contains(f.Name, dir) {
-			co := GitCollection{}
-
-			co.File = f.Name[strings.Index(f.Name, "/")+1:]
-			co.Hash = f.Hash.String()
-
-			coll = append(coll, co)
-		}
-		return nil
-	})
-
-	return coll
-}
-
-func retrieveFromRoot(tree *object.Tree) []GitCollection {
-	var coll []GitCollection
-
-	tree.Files().ForEach(func(f *object.File) error {
-		co := GitCollection{}
-
-		co.File = f.Name[strings.Index(f.Name, "/")+1:]
-		co.Hash = f.Hash.String()
-
-		coll = append(coll, co)
-
-		return nil
-	})
-
-	return coll
+	return coll, nil
 }
