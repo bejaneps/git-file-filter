@@ -80,7 +80,11 @@
           <tr>
             <th scope="row">{{$i}}</th>
             <td>{{$v.Hash}}</td>
-            <td>{{$v.File}}</td>
+            <td>
+              <a href="{{$v.FileURL}}">
+                {{$v.File}}
+              </a>
+            </td>
           </tr>
           {{end}}
           <tr>

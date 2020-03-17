@@ -18,6 +18,7 @@ var reposDir = "repositories"
 type collection struct {
 	Hash    string `json:"commit_hash"`
 	File    string `json:"file_name"`
+	FileURL string `json:"-"`
 	Content string `json:"content"`
 	Config  bool   `json:"-"`
 }
@@ -42,6 +43,8 @@ var configFiles = []string{
 	".tf",
 	".tf.json",
 	"Manifest",
+	".gradle",
+	".properties",
 }
 
 // GetGitCollection returns a filled GitCollection struct
@@ -97,14 +100,14 @@ func GetGitCollection(url, hash, dir string) (*GitCollection, error) {
 
 	// retrieve files from specific dir
 	if dir != "" {
-		coll.Coll, err = retrieveFromDir(dir, tree)
+		coll.Coll, err = retrieveFromDir(url, coll.BaseHash, dir, tree)
 		if err != nil {
 			return nil, errors.Wrapf(err, "(%s): retrieving list of files", op)
 		}
 
 		coll.BaseDir = dir
 	} else { // retrieve files from root dir
-		coll.Coll, err = retrieveFromRoot(tree)
+		coll.Coll, err = retrieveFromRoot(url, coll.BaseHash, tree)
 		if err != nil {
 			return nil, errors.Wrapf(err, "(%s): retrieving list of files", op)
 		}
@@ -118,7 +121,7 @@ func GetGitCollection(url, hash, dir string) (*GitCollection, error) {
 
 // retrieveFromDir returns a collection that has all files from a repo in a specific dir,
 // it also marks if a file is a config type.
-func retrieveFromDir(dir string, tree *object.Tree) ([]collection, error) {
+func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]collection, error) {
 	var coll []collection
 	var err error
 
@@ -126,9 +129,13 @@ func retrieveFromDir(dir string, tree *object.Tree) ([]collection, error) {
 		if strings.Contains(f.Name, dir) {
 			co := collection{}
 
-			co.File = f.Name[strings.Index(f.Name, "/")+1:]
 			co.Hash = f.Hash.String()
+
+			co.File = f.Name[strings.Index(f.Name, "/")+1:]
+			co.FileURL = url + "/blob/" + hash + "/" + dir + "/" + co.File
+
 			co.Config = isConfig(f.Name)
+
 			co.Content, err = f.Contents()
 			if err != nil {
 				return err
@@ -145,16 +152,20 @@ func retrieveFromDir(dir string, tree *object.Tree) ([]collection, error) {
 
 // retrieveFromRoot returns a collection that has all files from a repo in a root dir,
 // it also marks if a file is a config type.
-func retrieveFromRoot(tree *object.Tree) ([]collection, error) {
+func retrieveFromRoot(url, hash string, tree *object.Tree) ([]collection, error) {
 	var coll []collection
 	var err error
 
 	tree.Files().ForEach(func(f *object.File) error {
 		co := collection{}
 
-		co.File = f.Name
 		co.Hash = f.Hash.String()
+
+		co.File = f.Name
+		co.FileURL = url + "/blob/" + hash + "/" + f.Name
+
 		co.Config = isConfig(f.Name)
+
 		co.Content, err = f.Contents()
 		if err != nil {
 			return err
