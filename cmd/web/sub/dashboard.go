@@ -19,7 +19,7 @@ func (e *env) handleData(w http.ResponseWriter, r *http.Request) {
 	hash := r.URL.Query().Get("commit")
 	dir := r.URL.Query().Get("dir")
 
-	if url == "" || hash == "" || dir == "" {
+	if url == "" || hash == "" {
 		err := e.templateFiles.ExecuteTemplate(w, "error.html", errFormValuesEmpty)
 		if err != nil {
 			log.Error(err)

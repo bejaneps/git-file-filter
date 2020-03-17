@@ -24,8 +24,6 @@ type GitCollection struct {
 func GetGitCollections(url, hash, dir string) ([]GitCollection, error) {
 	var op = "crud.GetGitCollections"
 
-	var coll []GitCollection
-
 	// initialize vars, so we don't recreate them
 	r := &git.Repository{}
 	var err error
@@ -58,7 +56,18 @@ func GetGitCollections(url, hash, dir string) ([]GitCollection, error) {
 		return nil, errors.Wrapf(err, "(%s): retrieving a commit file structure", op)
 	}
 
-	// print just files in a given directory
+	// retrieve files from specific dir
+	if dir != "" {
+		return retrieveFromDir(tree, dir), nil
+	}
+
+	// retrieve files from root
+	return retrieveFromRoot(tree), nil
+}
+
+func retrieveFromDir(tree *object.Tree, dir string) []GitCollection {
+	var coll []GitCollection
+
 	tree.Files().ForEach(func(f *object.File) error {
 		if strings.Contains(f.Name, dir) {
 			co := GitCollection{}
@@ -71,5 +80,22 @@ func GetGitCollections(url, hash, dir string) ([]GitCollection, error) {
 		return nil
 	})
 
-	return coll, nil
+	return coll
+}
+
+func retrieveFromRoot(tree *object.Tree) []GitCollection {
+	var coll []GitCollection
+
+	tree.Files().ForEach(func(f *object.File) error {
+		co := GitCollection{}
+
+		co.File = f.Name[strings.Index(f.Name, "/")+1:]
+		co.Hash = f.Hash.String()
+
+		coll = append(coll, co)
+
+		return nil
+	})
+
+	return coll
 }
