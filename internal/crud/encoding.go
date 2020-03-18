@@ -46,52 +46,49 @@ func (c *GitCollection) Filter(rc *RegexpConfig) (*GitCollection, error) {
 		BaseDir:  c.BaseDir,
 	}
 
-	dockerExt := []string{"dockerfile", "Dockerfile", "dockerfile.yml", "dockerfile.yaml"}
-	terraformExt := []string{".tf", ".tf.json"}
-	manifestExt := []string{"Manifest"}
-	gradleExt := []string{".gradle", ".properties"}
-
 	var err error
 	reg := &regexp.Regexp{}
 	for _, v := range c.Coll {
-		if !v.Config {
-			continue
-		}
-		if rc.Docker != "" && util.In(dockerExt, v.Name) { // for docker extensions
-			v.Type = "Dockerfile"
-
+		if rc.Docker != "" {
 			reg, err = regexp.Compile(rc.Docker)
 			if err != nil {
 				return nil, errors.Wrapf(err, "(%s): invalid docker regexp", op)
 			}
-		} else if rc.Terraform != "" && util.In(terraformExt, v.Name) { // for terraform extensions
-			v.Type = "Terraform"
 
-			reg, err = regexp.Compile(rc.Terraform)
-			if err != nil {
-				return nil, errors.Wrapf(err, "(%s): invalid terraform regexp", op)
+			if reg.MatchString(v.Name) {
+				newColl.Coll = append(newColl.Coll, v)
+				continue
 			}
-		} else if rc.Manifest != "" && util.In(manifestExt, v.Name) { // for manifest extensions
-			v.Type = "Manifest"
-
-			reg, err = regexp.Compile(rc.Manifest)
-			if err != nil {
-				return nil, errors.Wrapf(err, "(%s): invalid manifest regexp", op)
-			}
-		} else if rc.Gradle != "" && util.In(gradleExt, v.Name) { // for gradle extensions
-			v.Type = "Gradle"
-
+		}
+		if rc.Gradle != "" {
 			reg, err = regexp.Compile(rc.Gradle)
 			if err != nil {
 				return nil, errors.Wrapf(err, "(%s): invalid gradle regexp", op)
 			}
-		} else { // TODO: other types to be implemented
-			continue
-		}
 
-		// check if regexp matches the content of file
-		if reg.MatchString(v.Content) {
-			newColl.Coll = append(newColl.Coll, v)
+			if reg.MatchString(v.Name) {
+				newColl.Coll = append(newColl.Coll, v)
+				continue
+			}
+		}
+		if rc.Terraform != "" {
+			reg, err = regexp.Compile(rc.Terraform)
+			if err != nil {
+				return nil, errors.Wrapf(err, "(%s): invalid terraform regexp", op)
+			}
+			if reg.MatchString(v.Name) {
+				newColl.Coll = append(newColl.Coll, v)
+				continue
+			}
+		}
+		if rc.Manifest != "" {
+			reg, err = regexp.Compile(rc.Manifest)
+			if err != nil {
+				return nil, errors.Wrapf(err, "(%s): invalid manifest regexp", op)
+			}
+			if reg.MatchString(v.Name) {
+				newColl.Coll = append(newColl.Coll, v)
+			}
 		}
 	}
 

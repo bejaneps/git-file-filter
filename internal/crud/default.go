@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bejaneps/go-git-webapp/internal/util"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
@@ -32,21 +31,6 @@ type GitCollection struct {
 	BaseDir  string `json:"-"`
 
 	Coll []file `json:"file"`
-}
-
-// a list of files that have to be filtered (configuration files)
-var configFiles = []string{
-	"Dockerfile",
-	"dockerfile.yml",
-	"dockerfile.yaml",
-	".json",
-	".cform",
-	".template",
-	".tf",
-	".tf.json",
-	"Manifest",
-	".gradle",
-	".properties",
 }
 
 // GetGitCollection returns a filled GitCollection struct
@@ -136,13 +120,9 @@ func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, error) {
 			co.Name = f.Name[strings.Index(f.Name, "/")+1:]
 			co.URL = url + "/blob/" + hash + "/" + dir + "/" + co.Name
 
-			if util.In(configFiles, f.Name) {
-				co.Config = true
-
-				co.Content, err = f.Contents()
-				if err != nil {
-					return err
-				}
+			co.Content, err = f.Contents()
+			if err != nil {
+				return err
 			}
 
 			coll = append(coll, co)
@@ -168,13 +148,9 @@ func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, error) {
 		co.Name = f.Name
 		co.URL = url + "/blob/" + hash + "/" + f.Name
 
-		if util.In(configFiles, f.Name) {
-			co.Config = true
-
-			co.Content, err = f.Contents()
-			if err != nil {
-				return err
-			}
+		co.Content, err = f.Contents()
+		if err != nil {
+			return err
 		}
 
 		coll = append(coll, co)
