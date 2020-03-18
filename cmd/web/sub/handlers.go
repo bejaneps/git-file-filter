@@ -3,7 +3,7 @@ package sub
 import (
 	"fmt"
 	"net/http"
-	"regexp"
+	"strings"
 	"time"
 
 	"github.com/bejaneps/go-git-webapp/internal/crud"
@@ -22,21 +22,31 @@ type cache struct {
 	*crud.GitCollection
 }
 
-func (e *env) handleDownload(w http.ResponseWriter, r *http.Request) {
-	// filter just config files for json
-	configColl := &crud.GitCollection{
-		BaseURL:  c.BaseURL,
-		BaseHash: c.BaseHash,
-		BaseDir:  c.BaseDir,
+func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
+	pattern := r.FormValue("pattern")
+
+	var err error
+
+	// convert all backslashes to forward slashes in string
+	pattern = strings.ReplaceAll(pattern, "\\", "/")
+
+	// decode query value to json
+	rt := &crud.RegexpConfig{}
+	err = json.NewDecoder(strings.NewReader(pattern)).Decode(rt)
+	if err != nil {
+		e.displayError(w, err, http.StatusInternalServerError)
+		return
 	}
-	for _, v := range c.Coll {
-		if v.Config {
-			configColl.Coll = append(configColl.Coll, v)
-		}
+
+	// filter files by regexp
+	coll, err := c.Filter(rt)
+	if err != nil {
+		e.displayError(w, err, http.StatusInternalServerError)
+		return
 	}
 
 	// create a json file
-	f, err := configColl.ToJSON()
+	f, err := coll.ToJSON()
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
@@ -48,30 +58,32 @@ func (e *env) handleDownload(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, f.Name(), time.Now(), f)
 }
 
-func (e *env) handleRegexp(w http.ResponseWriter, r *http.Request) {
-	pattern := r.URL.Query().Get("pattern")
+func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
+	// get json file from request
+	file, _, err := r.FormFile("regFile")
+	if err != nil {
+		e.displayError(w, err, http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
 
-	// compile regexp from from value
-	reg, err := regexp.Compile(pattern)
+	// decode file into json struct
+	rt := &crud.RegexpConfig{}
+	err = json.NewDecoder(file).Decode(rt)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
 	}
 
-	// match only files with content of regexp
-	configColl := &crud.GitCollection{
-		BaseURL:  c.BaseURL,
-		BaseHash: c.BaseHash,
-		BaseDir:  c.BaseDir,
-	}
-	for _, v := range c.Coll {
-		if v.Config && reg.MatchString(v.Content) {
-			configColl.Coll = append(configColl.Coll, v)
-		}
+	// filter files by regexp
+	coll, err := c.Filter(rt)
+	if err != nil {
+		e.displayError(w, err, http.StatusInternalServerError)
+		return
 	}
 
 	// create a json file
-	f, err := configColl.ToJSON()
+	f, err := coll.ToJSON()
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return

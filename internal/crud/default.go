@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bejaneps/go-git-webapp/internal/util"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
@@ -134,7 +135,7 @@ func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]collection, er
 			co.File = f.Name[strings.Index(f.Name, "/")+1:]
 			co.FileURL = url + "/blob/" + hash + "/" + dir + "/" + co.File
 
-			if isConfig(f.Name) {
+			if util.In(configFiles, f.Name) {
 				co.Config = true
 
 				co.Content, err = f.Contents()
@@ -166,7 +167,7 @@ func retrieveFromRoot(url, hash string, tree *object.Tree) ([]collection, error)
 		co.File = f.Name
 		co.FileURL = url + "/blob/" + hash + "/" + f.Name
 
-		if isConfig(f.Name) {
+		if util.In(configFiles, f.Name) {
 			co.Config = true
 
 			co.Content, err = f.Contents()
@@ -181,16 +182,4 @@ func retrieveFromRoot(url, hash string, tree *object.Tree) ([]collection, error)
 	})
 
 	return coll, nil
-}
-
-// isConfig returns true if a file is config type,
-// false if no.
-func isConfig(s string) bool {
-	for _, v := range configFiles {
-		if s == v || strings.Contains(s, v) {
-			return true
-		}
-	}
-
-	return false
 }
