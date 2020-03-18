@@ -1,7 +1,9 @@
 package sub
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -28,7 +30,7 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	// convert all backslashes to forward slashes in string
-	pattern = strings.ReplaceAll(pattern, "\\", "/")
+	pattern = strings.ReplaceAll(pattern, "\\", "\\\\")
 
 	// decode query value to json
 	rt := &crud.RegexpConfig{}
@@ -67,9 +69,21 @@ func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// read a file into a buffer, and then replace all \ to /
+	buf := &strings.Builder{}
+	b, err := io.Copy(buf, file)
+	if err != nil {
+		e.displayError(w, err, http.StatusInternalServerError)
+		return
+	} else if b == 0 {
+		e.displayError(w, errors.New("no bytes copied from file to buffer"), http.StatusInternalServerError)
+		return
+	}
+	pattern := strings.ReplaceAll(buf.String(), "\\", "\\\\")
+
 	// decode file into json struct
 	rt := &crud.RegexpConfig{}
-	err = json.NewDecoder(file).Decode(rt)
+	err = json.NewDecoder(strings.NewReader(pattern)).Decode(rt)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return

@@ -57,27 +57,35 @@ func (c *GitCollection) Filter(rc *RegexpConfig) (*GitCollection, error) {
 		if !v.Config {
 			continue
 		}
-		if rc.Docker != "" && util.In(dockerExt, v.File) { // for docker extensions
+		if rc.Docker != "" && util.In(dockerExt, v.Name) { // for docker extensions
+			v.Type = "Dockerfile"
+
 			reg, err = regexp.Compile(rc.Docker)
 			if err != nil {
 				return nil, errors.Wrapf(err, "(%s): invalid docker regexp", op)
 			}
-		} else if rc.Terraform != "" && util.In(terraformExt, v.File) { // for terraform extensions
+		} else if rc.Terraform != "" && util.In(terraformExt, v.Name) { // for terraform extensions
+			v.Type = "Terraform"
+
 			reg, err = regexp.Compile(rc.Terraform)
 			if err != nil {
 				return nil, errors.Wrapf(err, "(%s): invalid terraform regexp", op)
 			}
-		} else if rc.Manifest != "" && util.In(manifestExt, v.File) { // for manifest extensions
+		} else if rc.Manifest != "" && util.In(manifestExt, v.Name) { // for manifest extensions
+			v.Type = "Manifest"
+
 			reg, err = regexp.Compile(rc.Manifest)
 			if err != nil {
 				return nil, errors.Wrapf(err, "(%s): invalid manifest regexp", op)
 			}
-		} else if rc.Gradle != "" && util.In(gradleExt, v.File) { // for gradle extensions
+		} else if rc.Gradle != "" && util.In(gradleExt, v.Name) { // for gradle extensions
+			v.Type = "Gradle"
+
 			reg, err = regexp.Compile(rc.Gradle)
 			if err != nil {
 				return nil, errors.Wrapf(err, "(%s): invalid gradle regexp", op)
 			}
-		} else {
+		} else { // TODO: other types to be implemented
 			continue
 		}
 
