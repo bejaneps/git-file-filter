@@ -1,0 +1,27 @@
+{{template "base" .}}
+
+{{define "title"}}Files{{end}}
+
+{{define "body"}}
+    {{if .}}
+     <h2>Repository Files - {{.BaseURL}} {{.BaseHash}} {{.BaseDir}}</h2>
+    {{$data := .Coll}}
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Hash</th>
+            <th>Id</th>
+        </tr>
+        {{range $i, $v := $data}}
+        <tr>
+            <td><a href="{{$v.URL}}">{{$v.Name}}</a></td>
+            <td>{{$v.Hash}}</td>
+            <td>#{{$i}}</td>
+        </tr>
+        {{end}}
+    </table>
+    {{else}}
+    <h2>Repository Files</h2>
+    <p>There's nothing to see here... yet!</p>
+    {{end}}
+{{end}}

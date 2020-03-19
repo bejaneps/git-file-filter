@@ -15,14 +15,7 @@ import (
 
 var (
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
-
-	c = &cache{}
 )
-
-// temp cache to save data between requests
-type cache struct {
-	*crud.GitCollection
-}
 
 func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 	pattern := r.FormValue("pattern")
@@ -41,11 +34,13 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// filter files by regexp
-	coll, err := c.Filter(rt)
+	coll, err := e.gitCollectionFiles.Filter(rt)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
 	}
+
+	e.gitCollectionConfigs = coll // save to cache
 
 	// create a json file
 	f, err := coll.ToJSON()
@@ -62,7 +57,7 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 
 func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 	// get json file from request
-	file, _, err := r.FormFile("regFile")
+	file, _, err := r.FormFile("pattern")
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
@@ -90,11 +85,13 @@ func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// filter files by regexp
-	coll, err := c.Filter(rt)
+	coll, err := e.gitCollectionFiles.Filter(rt)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
 	}
+
+	e.gitCollectionConfigs = coll // save to cache
 
 	// create a json file
 	f, err := coll.ToJSON()
@@ -109,8 +106,11 @@ func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, f.Name(), time.Now(), f)
 }
 
-// TODO: create links for each file and commit hash
-func (e *env) handleData(w http.ResponseWriter, r *http.Request) {
+func (e *env) handleSearch(w http.ResponseWriter, r *http.Request) {
+	e.render(w, "create.page.tmpl", nil)
+}
+
+func (e *env) handleSearchQuery(w http.ResponseWriter, r *http.Request) {
 	// parse values from url query
 	url := r.URL.Query().Get("url")
 	hash := r.URL.Query().Get("commit")
@@ -124,12 +124,27 @@ func (e *env) handleData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// save collection to cache
-	c.GitCollection = coll
+	e.gitCollectionFiles = coll
 
-	// execute collection on template
-	e.templateFiles.ExecuteTemplate(w, "dashboard.html", coll)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (e *env) handleDashboard(w http.ResponseWriter, r *http.Request) {
-	e.templateFiles.ExecuteTemplate(w, "dashboard.html", nil)
+func (e *env) handleFiles(w http.ResponseWriter, r *http.Request) {
+	if e.gitCollectionFiles == nil {
+		e.render(w, "home.page.tmpl", nil)
+	} else {
+		e.render(w, "home.page.tmpl", e.gitCollectionFiles)
+	}
+}
+
+func (e *env) handleFilter(w http.ResponseWriter, r *http.Request) {
+	e.render(w, "filter.page.tmpl", nil)
+}
+
+func (e *env) handleConfigs(w http.ResponseWriter, r *http.Request) {
+	if e.gitCollectionConfigs == nil {
+		e.render(w, "configs.page.tmpl", nil)
+	} else {
+		e.render(w, "configs.page.tmpl", e.gitCollectionConfigs)
+	}
 }

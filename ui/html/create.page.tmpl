@@ -1,0 +1,23 @@
+{{template "base" .}}
+
+{{define "title"}}Search a Repository{{end}}
+
+{{define "body"}}
+<form action="/search/" method="GET" enctype="application/x-www-form-urlencoded">
+    <div>
+        <label for="url">Repository URL:</label>
+        <input type="text" name="url" placeholder="https://github.com/testname/testrepo" required>
+    </div>
+    <div>
+        <label for="commit">Commit Hash:</label>
+        <input type="text" name="commit" placeholder="9312jkasdn1230idsa">
+    </div>
+    <div>
+        <label for="dir">Directory:</label>
+        <input type="text" name="dir" placeholder="some-dir-name">
+    </div>
+    <div>
+        <input type="submit" value="Search">
+    </div>
+</form>
+{{end}}

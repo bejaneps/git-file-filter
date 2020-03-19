@@ -3,9 +3,8 @@ package main
 import (
 	"os"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/bejaneps/go-git-webapp/cmd/web/sub"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {

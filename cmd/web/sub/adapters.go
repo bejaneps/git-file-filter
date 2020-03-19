@@ -1,6 +1,7 @@
 package sub
 
 import (
+	"bytes"
 	"errors"
 	"net/http"
 	"runtime/debug"
@@ -13,10 +14,7 @@ func (e *env) displayError(w http.ResponseWriter, err error, status int) {
 
 	log.Error(err)
 
-	err2 := e.templateFiles.ExecuteTemplate(w, "error.html", http.StatusText(http.StatusInternalServerError))
-	if err2 != nil {
-		log.Error(err2)
-	}
+	e.render(w, "error.page.tmpl", http.StatusText(http.StatusInternalServerError))
 }
 
 func (e *env) catchPanic(f http.HandlerFunc) http.HandlerFunc {
@@ -31,4 +29,32 @@ func (e *env) catchPanic(f http.HandlerFunc) http.HandlerFunc {
 
 		f.ServeHTTP(w, r)
 	})
+}
+
+func (e *env) render(w http.ResponseWriter, name string, td interface{}) {
+	// Retrieve the appropriate template set from the cache based on the page n
+	// (like 'home.page.tmpl'). If no entry exists in the cache with the
+	// provided name, call the serverError helper method that we made earlier.
+	ts, ok := e.templateCache[name]
+	if !ok {
+		w.Write([]byte("Internal Server Error"))
+		log.Printf("The template %s does not exist", name)
+		return
+	}
+
+	// Initialize a new buffer.
+	buf := new(bytes.Buffer)
+
+	// Execute the template set, passing in any dynamic data.
+	err := ts.Execute(buf, td)
+	if err != nil {
+		w.Write([]byte("Internal Server Error"))
+		log.Error(err)
+		return
+	}
+
+	// Write the contents of the buffer to the http.ResponseWriter. Again, this
+	// is another time where we pass our http.ResponseWriter to a function that
+	// takes an io.Writer.
+	buf.WriteTo(w)
 }

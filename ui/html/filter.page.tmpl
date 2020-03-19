@@ -1,0 +1,28 @@
+{{template "base" .}}
+
+{{define "title"}}Search a Repository{{end}}
+
+{{define "body"}}
+<form action="/regexp" method="GET" enctype="application/x-www-form-urlencoded">
+    <div>
+        <label>Regexp: (text in .json format)</label>
+        <textarea name="pattern"></textarea>
+    </div>
+    <div>
+        <input type="submit" value="Filter">
+    </div>
+</form>
+<hr />
+<br />
+<br />
+<form action="/regexp" method="POST" enctype="multipart/form-data">
+    <div>
+        <label>Regexp: (file in .json format)</label>
+        <br />
+        <input type="file" name="pattern">
+    </div>
+    <div>
+        <input type="submit" value="Filter">
+    </div>
+</form>
+{{end}}

@@ -1,0 +1,25 @@
+{{template "base" .}}
+
+{{define "title"}}Configs{{end}}
+
+{{define "body"}}
+    {{if .}}
+    <h2>Repository Configs - {{.BaseURL}} {{.BaseHash}} {{.BaseDir}}</h2>
+    {{$data := .Coll}}
+    {{range $i, $v := $data}}
+    <div class="snippet">
+        <div class="metadata">
+            <strong><a href="{{$v.URL}}">{{$v.Name}}</a></strong>
+            <span>{{$v.Type}}</span>
+        </div>
+        <pre><code>{{$v.Content}}</code></pre>
+        <div class="metadata">
+            <time>Hash: {{$v.Hash}}</time>
+        </div>
+    </div>
+    {{end}}
+    {{else}}
+    <h2>Repository Configs</h2>
+    <p>There"s nothing to see here... yet!</p>
+    {{end}}
+{{end}}

@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/bejaneps/go-git-webapp/internal/crud"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
@@ -21,7 +22,59 @@ var listenPort = ":" + os.Getenv("PORT")
 type env struct {
 	router *mux.Router
 
-	templateFiles *template.Template
+	gitCollectionFiles   *crud.GitCollection
+	gitCollectionConfigs *crud.GitCollection
+
+	templateCache map[string]*template.Template
+}
+
+func newTemplateCache(dir string) (map[string]*template.Template, error) {
+	// Initialize a new map to act as the cache.
+	cache := map[string]*template.Template{}
+
+	// Use the filepath.Glob function to get a slice of all filepaths with
+	// the extension '.page.tmpl'. This essentially gives us a slice of all the
+	// 'page' templates for the application.
+	pages, err := filepath.Glob(filepath.Join(dir, "*.page.tmpl"))
+	if err != nil {
+		return nil, err
+	}
+
+	// Loop through the pages one-by-one.
+	for _, page := range pages {
+		// Extract the file name (like 'home.page.tmpl') from the full file pat
+		// and assign it to the name variable.
+		name := filepath.Base(page)
+
+		// Parse the page template file in to a template set.
+		ts, err := template.ParseFiles(page)
+		if err != nil {
+			return nil, err
+		}
+
+		// Use the ParseGlob method to add any 'layout' templates to the
+		// template set (in our case, it's just the 'base' layout at the
+		// moment).
+		ts, err = ts.ParseGlob(filepath.Join(dir, "*.layout.tmpl"))
+		if err != nil {
+			return nil, err
+		}
+
+		// Use the ParseGlob method to add any 'partial' templates to the
+		// template set (in our case, it's just the 'footer' partial at the
+		// moment).
+		ts, err = ts.ParseGlob(filepath.Join(dir, "*.partial.tmpl"))
+		if err != nil {
+			return nil, err
+		}
+
+		// Add the template set to the cache, using the name of the page
+		// (like 'home.page.tmpl') as the key.
+		cache[name] = ts
+	}
+
+	// Return the map.
+	return cache, nil
 }
 
 func newEnv() (*env, error) {
@@ -34,8 +87,8 @@ func newEnv() (*env, error) {
 	e.router = mux.NewRouter()
 	e.routes()
 
-	// parse all templates
-	e.templateFiles, err = template.ParseGlob(filepath.Join("templates", "*"))
+	// initialize a new template cache...
+	e.templateCache, err = newTemplateCache("./ui/html/")
 	if err != nil {
 		return nil, errors.WithMessagef(err, "(%s): ", op)
 	}
@@ -55,7 +108,7 @@ func Execute() (err error) {
 
 	// check if port variable is set, if no set it to default value
 	if len(listenPort) < 2 {
-		listenPort = ":7000"
+		listenPort = ":4000"
 	}
 
 	// setup a server
