@@ -18,6 +18,12 @@ var (
 )
 
 func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
+	// check if user searched a repository or no
+	if e.gitCollectionFiles == nil {
+		http.Redirect(w, r, "/search", http.StatusTemporaryRedirect)
+		return
+	}
+
 	pattern := r.FormValue("pattern")
 
 	var err error
@@ -56,6 +62,12 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
+	// check if user searched a repository or no
+	if e.gitCollectionFiles == nil {
+		http.Redirect(w, r, "/search", http.StatusTemporaryRedirect)
+		return
+	}
+
 	// get json file from request
 	file, _, err := r.FormFile("pattern")
 	if err != nil {
