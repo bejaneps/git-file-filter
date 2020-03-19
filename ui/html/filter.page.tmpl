@@ -6,7 +6,7 @@
 <form action="/regexp" method="GET" enctype="application/x-www-form-urlencoded">
     <div>
         <label>Regexp: (text in .json format)</label>
-        <textarea name="pattern"></textarea>
+        <textarea name="pattern" required></textarea>
     </div>
     <div>
         <input type="submit" value="Filter">
@@ -19,7 +19,7 @@
     <div>
         <label>Regexp: (file in .json format)</label>
         <br />
-        <input type="file" name="pattern">
+        <input type="file" name="pattern" required>
     </div>
     <div>
         <input type="submit" value="Filter">
