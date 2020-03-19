@@ -11,10 +11,7 @@ import (
 
 // RegexpConfig is a struct that holds a regexp info about each config file type.
 type RegexpConfig struct {
-	Docker    string `json:"Docker"`
-	Terraform string `json:"Terraform"`
-	Manifest  string `json:"Manifest"`
-	Gradle    string `json:"Gradle"`
+	X map[string]string `json:"-"`
 }
 
 // ToJSON returns a json representation of a Git collection in a file.
@@ -38,7 +35,7 @@ func (c *GitCollection) ToJSON() (*os.File, error) {
 
 // Filter applies regexp on content of each config file that is specified, and returns new collection with filtered result.
 func (c *GitCollection) Filter(rc *RegexpConfig) (*GitCollection, error) {
-	op := "crud.ConfigFileMatch"
+	op := "crud.GitCollectionMatch"
 
 	newColl := &GitCollection{
 		BaseURL:  c.BaseURL,
@@ -48,46 +45,17 @@ func (c *GitCollection) Filter(rc *RegexpConfig) (*GitCollection, error) {
 
 	var err error
 	reg := &regexp.Regexp{}
-	for _, v := range c.Coll {
-		if rc.Docker != "" {
-			reg, err = regexp.Compile(rc.Docker)
+	for _, f := range c.Coll {
+		for key, val := range rc.X {
+			reg, err = regexp.Compile(val)
 			if err != nil {
-				return nil, errors.Wrapf(err, "(%s): invalid docker regexp", op)
+				return nil, errors.Wrapf(err, "(%s): invalid %s regexp", op, key)
 			}
 
-			if reg.MatchString(v.Name) {
-				newColl.Coll = append(newColl.Coll, v)
-				continue
-			}
-		}
-		if rc.Gradle != "" {
-			reg, err = regexp.Compile(rc.Gradle)
-			if err != nil {
-				return nil, errors.Wrapf(err, "(%s): invalid gradle regexp", op)
-			}
-
-			if reg.MatchString(v.Name) {
-				newColl.Coll = append(newColl.Coll, v)
-				continue
-			}
-		}
-		if rc.Terraform != "" {
-			reg, err = regexp.Compile(rc.Terraform)
-			if err != nil {
-				return nil, errors.Wrapf(err, "(%s): invalid terraform regexp", op)
-			}
-			if reg.MatchString(v.Name) {
-				newColl.Coll = append(newColl.Coll, v)
-				continue
-			}
-		}
-		if rc.Manifest != "" {
-			reg, err = regexp.Compile(rc.Manifest)
-			if err != nil {
-				return nil, errors.Wrapf(err, "(%s): invalid manifest regexp", op)
-			}
-			if reg.MatchString(v.Name) {
-				newColl.Coll = append(newColl.Coll, v)
+			if reg.MatchString(f.Name) {
+				f.Type = key // make the type same as a key of regex
+				newColl.Coll = append(newColl.Coll, f)
+				break
 			}
 		}
 	}

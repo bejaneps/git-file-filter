@@ -34,7 +34,7 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 
 	// decode query value to json
 	rt := &crud.RegexpConfig{}
-	err = json.NewDecoder(strings.NewReader(pattern)).Decode(rt)
+	err = json.NewDecoder(strings.NewReader(pattern)).Decode(&rt.X)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
@@ -83,7 +83,7 @@ func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 
 	// decode file into json struct
 	rt := &crud.RegexpConfig{}
-	err = json.NewDecoder(strings.NewReader(pattern)).Decode(rt)
+	err = json.NewDecoder(strings.NewReader(pattern)).Decode(&rt.X)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
