@@ -39,7 +39,7 @@ type file struct {
 	Content string `json:"content"`
 	Config  bool   `json:"-"`
 
-	Reader io.ReadCloser
+	Reader io.ReadCloser `json:"-"`
 }
 
 // GitCollection is a struct that holds a commit hash and filename in a git repository

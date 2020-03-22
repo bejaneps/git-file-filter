@@ -44,14 +44,22 @@ There are 4 pages in total, each page has it's own function. Main entrance is a 
 
 **Filter** - user types a regexp pattern in json form, and the server filters files in a repository (or in a specific folder) and puts them in **Configs** page. Additionally it offers user to download a result file in json format. Example:
 
-    ```
+    
     {
-        "Docker": "(\bdocker-compose.yml\b|\bDockerfile\b)",
-        "Terraform": "(.tf|.tf.json)",
-        "Gradle": "(\b\.gradle\b)",
-        "Manifest": "(\bManifest\b)"
+        "config": [
+            {
+                "name": "Docker",
+                "filter": "\b(docker-compose.yml|docker-compose.yaml)\b",
+                "policy": "http://127.0.0.1:5000/docker"
+            },
+            {
+                "terraform": "Terraform",
+                "filter": "\b(.tf|.tf.json)\b",
+                "policy": "http://127.0.0.1:500/terraform"
+            }
+        ]
     }
-    ```
+    
 
 **Files** - all the files in a root or specific directory of a repository are shown here. Each file name has a link to it's git location, as well as it's hash.
 
