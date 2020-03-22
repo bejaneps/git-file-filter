@@ -13,6 +13,10 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
+type Request struct {
+	Config []crud.Config `json:"config"`
+}
+
 var (
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
 )
@@ -32,15 +36,15 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 	pattern = strings.ReplaceAll(pattern, "\\", "\\\\")
 
 	// decode query value to json
-	rt := &crud.RegexpConfig{}
-	err = json.NewDecoder(strings.NewReader(pattern)).Decode(&rt.X)
+	conf := &Request{}
+	err = json.NewDecoder(strings.NewReader(pattern)).Decode(&conf)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	// filter files by regexp
-	coll, err := e.gitCollectionFiles.Filter(rt)
+	coll, err := e.gitCollectionFiles.Filter(conf.Config)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
@@ -49,7 +53,7 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 	e.gitCollectionConfigs = coll // save to cache
 
 	// create a json file
-	f, err := coll.ToJSON()
+	f, err := coll.ToJSONFile()
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
@@ -89,15 +93,15 @@ func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 	pattern := strings.ReplaceAll(buf.String(), "\\", "\\\\")
 
 	// decode file into json struct
-	rt := &crud.RegexpConfig{}
-	err = json.NewDecoder(strings.NewReader(pattern)).Decode(&rt.X)
+	conf := &Request{}
+	err = json.NewDecoder(strings.NewReader(pattern)).Decode(&conf)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	// filter files by regexp
-	coll, err := e.gitCollectionFiles.Filter(rt)
+	coll, err := e.gitCollectionFiles.Filter(conf.Config)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return
@@ -106,7 +110,7 @@ func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 	e.gitCollectionConfigs = coll // save to cache
 
 	// create a json file
-	f, err := coll.ToJSON()
+	f, err := coll.ToJSONFile()
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
 		return

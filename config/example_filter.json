@@ -1,0 +1,9 @@
+{
+  "config": [
+      {
+          "name": "Docker",
+          "filter": "\b(docker-compose.yml|docker-compose.yaml)\b",
+          "policy": "http://127.0.0.1:5000/docker"
+      }
+  ]
+}
