@@ -3,6 +3,7 @@ package crud
 import (
 	"context"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -25,7 +26,10 @@ var (
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
-var reposDir = "repositories"
+var (
+	reposDir      = "repositories"
+	defaultPolicy = filepath.Join("config", "default.rego")
+)
 
 // file holds info individual files commit hash and names
 type file struct {
@@ -252,13 +256,20 @@ func (c *GitCollection) Filter(confs []Config) (*GitCollection, error) {
 			var policy string
 			var err error
 
-			if conf.Policy == "" {
-				policy = c.PolicyFile
-			} else { // get a policy from a url
+			if conf.Policy != "" { // get a policy from url
 				policy, err = getPolicyFromURL(conf.Policy)
 				if err != nil {
 					return nil, errors.Wrapf(err, "(%s): retrieving policy file from %s", op, conf.Policy)
 				}
+			} else if c.PolicyFile != "" { // use a policy from git repo
+				policy = c.PolicyFile
+			} else { // use default policy
+				temp, err := ioutil.ReadFile(defaultPolicy)
+				if err != nil {
+					return nil, errors.Wrapf(err, "(%s): reading default policy file", op)
+				}
+
+				policy = string(temp)
 			}
 
 			input, err := util.ToJSON(coll.Name, coll.Reader)

@@ -2,13 +2,11 @@
   "config": [
       {
           "name": "Docker",
-          "filter": "\b(docker-compose.yml|docker-compose.yaml)\b",
-          "policy": "http://127.0.0.1:5000/docker"
+          "filter": "\b(docker-compose.yml|docker-compose.yaml)\b"
       },
       {
           "terraform": "Terraform",
-          "filter": "\b(.tf|.tf.json)\b",
-          "policy": "http://127.0.0.1:5000/terraform"
+          "filter": "\b(.tf|.tf.json)\b"
       }
   ]
 }
