@@ -5,7 +5,7 @@
           "filter": "\b(docker-compose.yml|docker-compose.yaml)\b"
       },
       {
-          "terraform": "Terraform",
+          "name": "Terraform",
           "filter": "\b(.tf|.tf.json)\b"
       }
   ]
