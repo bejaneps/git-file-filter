@@ -3,14 +3,11 @@ package crud
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/ghodss/yaml"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/open-policy-agent/opa/rego"
@@ -264,11 +261,11 @@ func (c *GitCollection) Filter(confs []Config) (*GitCollection, error) {
 				}
 			}
 
-			input, err := toJSON(coll.Name, coll.Reader)
-			if err != nil {
-				return nil, errors.Wrapf(err, "(%s): converting %s file to json", op, coll.Name)
-			} else if len(input) == 0 {
+			input, err := util.ToJSON(coll.Name, coll.Reader)
+			if errors.Cause(err) == util.ErrUnsupportedFileType {
 				continue
+			} else if err != nil || len(input) == 0 || input == nil {
+				return nil, errors.Wrapf(err, "(%s): converting %s file to json", op, coll.Name)
 			}
 
 			// create a new rego object
@@ -318,27 +315,6 @@ func getPolicyFromURL(url string) (content string, err error) {
 	}
 
 	return buf.String(), nil
-}
-
-// toJSON tries to convert a file to compatible JSON format.
-func toJSON(name string, rc io.ReadCloser) ([]byte, error) {
-	// obtain bytes of an input file for unmarshaling
-	bs, err := ioutil.ReadAll(rc)
-	if err != nil {
-		return nil, err
-	} else if len(bs) == 0 {
-		return nil, errors.Errorf("no bytes read from file %s", name)
-	}
-
-	var js []byte
-	if util.In([]string{".yaml", ".yml"}, name) {
-		js, err = yaml.YAMLToJSON(bs)
-		if err != nil {
-			return nil, errors.New("converting yaml to json: " + name)
-		}
-	}
-
-	return js, nil
 }
 
 // ToJSONFile returns a json representation of a Git collection in a file.

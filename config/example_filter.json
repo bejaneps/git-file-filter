@@ -8,7 +8,7 @@
       {
           "terraform": "Terraform",
           "filter": "\b(.tf|.tf.json)\b",
-          "policy": "http://127.0.0.1:500/terraform"
+          "policy": "http://127.0.0.1:5000/terraform"
       }
   ]
 }
