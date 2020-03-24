@@ -1,12 +1,14 @@
 {
-  "config": [
-      {
-          "name": "Docker",
-          "filter": "\b(docker-compose.yml|docker-compose.yaml)\b"
-      },
-      {
-          "name": "Terraform",
-          "filter": "\b(.tf|.tf.json)\b"
-      }
-  ]
+    "config": [
+        {
+            "name": "Docker",
+            "filter": "\b(docker-compose.yml|docker-compose.yaml)\b",
+            "policy": "https://example.com/docker.rego"
+        },
+        {
+            "name": "Terraform",
+            "filter": "\b(.tf|.tf.json)\b",
+            "policy": "https://example.com/terraform.rego"
+        }
+    ]
 }

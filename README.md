@@ -53,13 +53,14 @@ There are 4 pages in total, each page has it's own function. Main entrance is a 
                 "policy": "http://127.0.0.1:5000/docker"
             },
             {
-                "terraform": "Terraform",
+                "name": "Terraform",
                 "filter": "\b(.tf|.tf.json)\b",
-                "policy": "http://127.0.0.1:500/terraform"
+                "policy": "http://127.0.0.1:5000/terraform"
             }
         ]
     }
-    
+
+**NOTE:** policy field is optional, if it's not mentioned, then an app will try to search a policy in git repo, if it doesn't find it, then it will user default policy.
 
 **Files** - all the files in a root or specific directory of a repository are shown here. Each file name has a link to it's git location, as well as it's hash.
 
