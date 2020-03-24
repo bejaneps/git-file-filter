@@ -50,15 +50,16 @@ There are 4 pages in total, each page has it's own function. Main entrance is a 
             {
                 "name": "Docker",
                 "filter": "\b(docker-compose.yml|docker-compose.yaml)\b",
-                "policy": "http://127.0.0.1:5000/docker"
+                "policy": "https://example.com/docker.rego"
             },
             {
                 "name": "Terraform",
                 "filter": "\b(.tf|.tf.json)\b",
-                "policy": "http://127.0.0.1:5000/terraform"
+                "policy": "https://example.com/terraform.rego"
             }
         ]
     }
+    
 
 **NOTE:** policy field is optional, if it's not mentioned, then an app will try to search a policy in git repo, if it doesn't find it, then it will user default policy.
 
