@@ -21,9 +21,10 @@ func ToJSON(name string, rc io.ReadCloser) ([]byte, error) {
 	bs, err := ioutil.ReadAll(rc)
 	if err != nil {
 		return nil, errors.Wrapf(err, "(%s): reading file %s", op, name)
-	} else if len(bs) == 0 {
-		return nil, errors.Errorf("no bytes read from file %s", name)
 	}
+	// } else if len(bs) == 0 {
+	// 	return nil, errors.Errorf("no bytes read from file %s", name)
+	// }
 
 	var js []byte
 	if In([]string{".json"}, name) { // for json

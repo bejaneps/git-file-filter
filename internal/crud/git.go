@@ -40,6 +40,8 @@ type file struct {
 	Content string `json:"content"`
 	Config  bool   `json:"-"`
 
+	AppliedPolicy string `json:"applied_policy"` // name of the policy
+
 	Reader io.ReadCloser `json:"-"`
 }
 
@@ -49,16 +51,16 @@ type GitCollection struct {
 	BaseHash string `json:"-"`
 	BaseDir  string `json:"-"`
 
-	PolicyFile string `json:"-"` // string representation of content of a .rego file
+	Policy *file `json:"-"` // string representation of content of a .rego file
 
 	Coll []file `json:"file"`
 }
 
 // Config holds an info about each config file filtering, name: "Docker", filter: "\bDockerfile\b", policy: "https://example.com/1"
 type Config struct {
-	Name   string `json:"name"`
-	Filter string `json:"filter"`
-	Policy string `json:"policy"`
+	Name      string `json:"name"`
+	Filter    string `json:"filter"`
+	PolicyURL string `json:"policy"`
 }
 
 // GetGitCollection returns a filled GitCollection struct
@@ -112,11 +114,18 @@ func GetGitCollection(url, hash, dir string) (*GitCollection, error) {
 		return nil, errors.Wrapf(err, "(%s): retrieving a commit file structure", op)
 	}
 
+	var name, content string
 	// retrieve files from specific dir
 	if dir != "" {
 		coll.Coll, err = retrieveFromDir(url, coll.BaseHash, dir, tree)
 		if err != nil {
 			return nil, errors.Wrapf(err, "(%s): retrieving list of files", op)
+		}
+
+		// search for a policy file
+		name, content, err = findPolicyFromDir(dir, tree)
+		if err != nil {
+			return nil, errors.Wrapf(err, "(%s): searching a .rego file", op)
 		}
 
 		coll.BaseDir = dir
@@ -126,15 +135,19 @@ func GetGitCollection(url, hash, dir string) (*GitCollection, error) {
 			return nil, errors.Wrapf(err, "(%s): retrieving list of files", op)
 		}
 
+		// search for a policy file
+		name, content, err = findPolicyFromRoot(tree)
+		if err != nil {
+			return nil, errors.Wrapf(err, "(%s): searching a .rego file", op)
+		}
+
 		coll.BaseDir = "/"
 	}
-
-	// search for a policy file
-	content, err := findPolicy(tree)
-	if err != nil {
-		return nil, errors.Wrapf(err, "(%s): searching a .rego file", op)
+	if name != "" && content != "" { // for applying policy
+		coll.Policy = &file{}
+		coll.Policy.Content = content
+		coll.Policy.Name = name
 	}
-	coll.PolicyFile = content // for applying policy
 
 	// retrieve files from root
 	return coll, nil
@@ -212,13 +225,36 @@ func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, error) {
 	return coll, nil
 }
 
+// findPolicy searches for a policy .rego file in a git repository specific dir,
+// if it finds a file, it returns a file's content converted to string,
+// else nil.
+func findPolicyFromDir(dir string, tree *object.Tree) (name, content string, err error) {
+	tree.Files().ForEach(func(f *object.File) error {
+		if strings.Contains(f.Name, dir) {
+			if strings.Contains(f.Name, ".rego") {
+				content, err = f.Contents()
+
+				name = f.Name
+
+				return nil
+			}
+		}
+		return nil
+	})
+
+	return
+}
+
 // findPolicy searches for a policy .rego file in a git repository,
 // if it finds a file, it returns a file's content converted to string,
 // else nil.
-func findPolicy(tree *object.Tree) (content string, err error) {
+func findPolicyFromRoot(tree *object.Tree) (name, content string, err error) {
 	tree.Files().ForEach(func(f *object.File) error {
 		if strings.Contains(f.Name, ".rego") {
 			content, err = f.Contents()
+
+			name = f.Name
+
 			return nil
 		}
 		return nil
@@ -256,13 +292,17 @@ func (c *GitCollection) Filter(confs []Config) (*GitCollection, error) {
 			var policy string
 			var err error
 
-			if conf.Policy != "" { // get a policy from url
-				policy, err = getPolicyFromURL(conf.Policy)
+			if conf.PolicyURL != "" { // get a policy from url
+				policy, err = getPolicyFromURL(conf.PolicyURL)
 				if err != nil {
-					return nil, errors.Wrapf(err, "(%s): retrieving policy file from %s", op, conf.Policy)
+					return nil, errors.Wrapf(err, "(%s): retrieving policy file from %s", op, conf.PolicyURL)
 				}
-			} else if c.PolicyFile != "" { // use a policy from git repo
-				policy = c.PolicyFile
+
+				coll.AppliedPolicy = conf.PolicyURL
+			} else if c.Policy != nil { // use a policy from git repo
+				policy = c.Policy.Content
+
+				coll.AppliedPolicy = c.Policy.Name
 			} else { // use default policy
 				temp, err := ioutil.ReadFile(defaultPolicy)
 				if err != nil {
@@ -270,6 +310,8 @@ func (c *GitCollection) Filter(confs []Config) (*GitCollection, error) {
 				}
 
 				policy = string(temp)
+
+				coll.AppliedPolicy = defaultPolicy
 			}
 
 			input, err := util.ToJSON(coll.Name, coll.Reader)
@@ -282,7 +324,7 @@ func (c *GitCollection) Filter(confs []Config) (*GitCollection, error) {
 			// create a new rego object
 			r := rego.New(
 				rego.Query("data"),
-				rego.Module(conf.Policy, policy),
+				rego.Module(conf.PolicyURL, policy),
 				rego.Input(input),
 			)
 
