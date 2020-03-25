@@ -2,6 +2,7 @@ package crud
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -40,6 +41,7 @@ type file struct {
 	Content string `json:"content"`
 	Config  bool   `json:"-"`
 
+	OutputPolicy  string `json:"output_policy"`  // output of the opa applied
 	AppliedPolicy string `json:"applied_policy"` // name of the policy
 
 	Reader io.ReadCloser `json:"-"`
@@ -336,6 +338,18 @@ func (c *GitCollection) Filter(confs []Config) (*GitCollection, error) {
 			}
 
 			if len(rs) != 0 {
+				for _, busu := range rs {
+					for _, miki := range busu.Expressions {
+						mapi := miki.Value.(map[string]interface{})
+						for _, pur := range mapi {
+							mupi := pur.(map[string]interface{})
+							for ind, shind := range mupi {
+								coll.OutputPolicy = fmt.Sprintf("%s: %v", ind, shind)
+							}
+						}
+					}
+				}
+
 				newColl.Coll = append(newColl.Coll, coll)
 			}
 		}

@@ -1,3 +1,3 @@
 package example
 
-default allow = true
+msg := "policy applied successfully"
