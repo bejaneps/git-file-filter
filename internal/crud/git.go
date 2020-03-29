@@ -51,6 +51,13 @@ type file struct {
 	Reader io.ReadCloser `json:"-"`
 }
 
+type language struct {
+	Count int `json:"count"`
+
+	Known   map[string]int `json:"known"`
+	Unknown []string       `json:"unknown"`
+}
+
 // GitCollection is a struct that holds a commit hash and filename in a git repository
 type GitCollection struct {
 	BaseURL  string `json:"-"`
@@ -60,7 +67,7 @@ type GitCollection struct {
 	FileCount       int `json:"file_count"`
 	ConfigFileCount int `json:"config_file_count"`
 
-	Language map[string]int `json:"language"`
+	Language *language `json:"language"`
 
 	Policy *file `json:"-"` // string representation of content of a .rego file
 
@@ -167,11 +174,13 @@ func GetGitCollection(url, hash, dir string) (*GitCollection, error) {
 // retrieveFromDir returns a collection that has all files from a repo in a specific dir.
 // It returns the collection of files in a git specific dir, the count of files, the slice of programming languages, and slice of unknown pr langs,
 // also it returns the map of language and count of files that language use.
-func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, int, map[string]int, error) {
+func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, int, *language, error) {
 	var coll []file
 	var err error
 	var count int
-	var langs = make(map[string]int)
+	var langs = &language{
+		Known: make(map[string]int),
+	}
 
 	err = tree.Files().ForEach(func(f *object.File) error {
 		if strings.Contains(f.Name, dir) {
@@ -201,7 +210,12 @@ func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, int, map
 			}
 
 			// add the count of each language file used
-			langs[co.Extension]++
+			if co.Extension == "Unknown" {
+				langs.Unknown = append(langs.Unknown, f.Name)
+			} else {
+				langs.Count++
+			}
+			langs.Known[co.Extension]++
 
 			coll = append(coll, co)
 			count++
@@ -219,11 +233,13 @@ func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, int, map
 // retrieveFromRoot returns a collection that has all files from a repo in a root dir.
 // It returns the collection of files in a git root dir, the count of files, the slice of programming languages, and slice of unknown pr langs,
 // also it returns the map of language and count of files that language use.
-func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, int, map[string]int, error) {
+func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, int, *language, error) {
 	var coll []file
 	var err error
 	var count int
-	var langs = make(map[string]int)
+	var langs = &language{
+		Known: make(map[string]int),
+	}
 
 	err = tree.Files().ForEach(func(f *object.File) error {
 		co := file{}
@@ -252,7 +268,12 @@ func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, int, map[str
 		}
 
 		// add the count of each language file used
-		langs[co.Extension]++
+		if co.Extension == "Unknown" {
+			langs.Unknown = append(langs.Unknown, f.Name)
+		} else {
+			langs.Count++
+		}
+		langs.Known[co.Extension]++
 
 		coll = append(coll, co)
 		count++
