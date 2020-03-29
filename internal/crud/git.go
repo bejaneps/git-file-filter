@@ -21,6 +21,8 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	git "gopkg.in/src-d/go-git.v4"
+
+	enry "github.com/src-d/enry/v2"
 )
 
 var (
@@ -34,15 +36,17 @@ var (
 
 // file holds info individual files commit hash and names
 type file struct {
-	Hash    string `json:"-"`
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	URL     string `json:"-"`
-	Content string `json:"content"`
-	Config  bool   `json:"-"`
+	Hash      string `json:"-"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	URL       string `json:"-"`
+	Config    bool   `json:"-"`
+	Extension string `json:"extension"`
 
 	OutputPolicy  string `json:"output_policy"`  // output of the opa applied
 	AppliedPolicy string `json:"applied_policy"` // name of the policy
+
+	Content string `json:"content"`
 
 	Reader io.ReadCloser `json:"-"`
 }
@@ -179,6 +183,11 @@ func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, error) {
 				return err
 			}
 
+			co.Extension, _ = enry.GetLanguageByExtension(f.Name)
+			if co.Extension == "" { // if can't determine ext by name then lookup it's content
+				co.Extension, _ = enry.GetLanguageByContent(f.Name, []byte(co.Content))
+			}
+
 			coll = append(coll, co)
 		}
 
@@ -212,6 +221,11 @@ func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, error) {
 		co.Content, err = f.Contents()
 		if err != nil {
 			return err
+		}
+
+		co.Extension, _ = enry.GetLanguageByExtension(f.Name)
+		if co.Extension == "" { // if can't determine ext by name then lookup it's content
+			co.Extension, _ = enry.GetLanguageByContent(f.Name, []byte(co.Content))
 		}
 
 		coll = append(coll, co)
