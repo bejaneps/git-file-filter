@@ -13,7 +13,8 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-type Request struct {
+// request is a struct that holds a json config from filter page in web app
+type request struct {
 	Config []crud.Config `json:"config"`
 }
 
@@ -21,6 +22,7 @@ var (
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
+// handleRegexpGET handles upcoming requests from webapp filter page.
 func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 	// check if user searched a repository or no
 	if e.gitCollectionFiles == nil {
@@ -28,7 +30,7 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pattern := r.FormValue("pattern")
+	pattern := r.FormValue("pattern") // get the json from request
 
 	var err error
 
@@ -36,7 +38,7 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 	pattern = strings.ReplaceAll(pattern, "\\", "\\\\")
 
 	// decode query value to json
-	conf := &Request{}
+	conf := &request{}
 	err = json.NewDecoder(strings.NewReader(pattern)).Decode(&conf)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)
@@ -65,6 +67,7 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, f.Name(), time.Now(), f)
 }
 
+// handleRegexpPOST handles upcoming requests from webapp filter page.
 func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 	// check if user searched a repository or no
 	if e.gitCollectionFiles == nil {
@@ -93,7 +96,7 @@ func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 	pattern := strings.ReplaceAll(buf.String(), "\\", "\\\\")
 
 	// decode file into json struct
-	conf := &Request{}
+	conf := &request{}
 	err = json.NewDecoder(strings.NewReader(pattern)).Decode(&conf)
 	if err != nil {
 		e.displayError(w, err, http.StatusInternalServerError)

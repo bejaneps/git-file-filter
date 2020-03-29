@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// displayError is a function that uses usual respond for errors that happen on server side.
 func (e *env) displayError(w http.ResponseWriter, err error, status int) {
 	w.WriteHeader(status)
 
@@ -17,6 +18,7 @@ func (e *env) displayError(w http.ResponseWriter, err error, status int) {
 	e.render(w, "error.page.tmpl", http.StatusText(http.StatusInternalServerError))
 }
 
+// catchPanic is an adapter for catching panic.
 func (e *env) catchPanic(f http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -31,6 +33,7 @@ func (e *env) catchPanic(f http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
+// render renders a template from a cache.
 func (e *env) render(w http.ResponseWriter, name string, td interface{}) {
 	// Retrieve the appropriate template set from the cache based on the page n
 	// (like 'home.page.tmpl'). If no entry exists in the cache with the

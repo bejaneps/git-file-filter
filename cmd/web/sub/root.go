@@ -19,6 +19,7 @@ import (
 
 var listenPort = ":" + os.Getenv("PORT")
 
+// env is a collection that holds dependencies needed to pass to route handlers
 type env struct {
 	router *mux.Router
 
@@ -28,6 +29,8 @@ type env struct {
 	templateCache map[string]*template.Template
 }
 
+// newTemplateCache is a function that creates a cachce of html templates,
+// so everytime page is reloaded server wouldn't recreate that page.
 func newTemplateCache(dir string) (map[string]*template.Template, error) {
 	// Initialize a new map to act as the cache.
 	cache := map[string]*template.Template{}
@@ -77,6 +80,8 @@ func newTemplateCache(dir string) (map[string]*template.Template, error) {
 	return cache, nil
 }
 
+// newEnv is a constructor for main environment type,
+// used for dependency injections.
 func newEnv() (*env, error) {
 	var op = "cmd.newEnv"
 	var err error
@@ -96,7 +101,9 @@ func newEnv() (*env, error) {
 	return e, nil
 }
 
-// Execute all functions 1 by 1
+// Execute is a place where an execution of the program begins,
+// here the the environment type is initialized, the server is setuped
+// and started.
 func Execute() (err error) {
 	var op = "cmd.Execute"
 

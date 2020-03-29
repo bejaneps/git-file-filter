@@ -155,8 +155,7 @@ func GetGitCollection(url, hash, dir string) (*GitCollection, error) {
 	return coll, nil
 }
 
-// retrieveFromDir returns a collection that has all files from a repo in a specific dir,
-// it also marks if a file is a config type.
+// retrieveFromDir returns a collection that has all files from a repo in a specific dir.
 func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, error) {
 	var coll []file
 	var err error
@@ -192,8 +191,7 @@ func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, error) {
 	return coll, nil
 }
 
-// retrieveFromRoot returns a collection that has all files from a repo in a root dir,
-// it also marks if a file is a config type.
+// retrieveFromRoot returns a collection that has all files from a repo in a root dir.
 func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, error) {
 	var coll []file
 	var err error
@@ -316,7 +314,7 @@ func (c *GitCollection) Filter(confs []Config) (*GitCollection, error) {
 				coll.AppliedPolicy = defaultPolicy
 			}
 
-			input, err := util.ToJSON(coll.Name, coll.Reader)
+			input, err := util.ToJSON(coll.Name, coll.Reader) // convert a config file to json, and then pass it to OPA.s
 			if errors.Cause(err) == util.ErrUnsupportedFileType {
 				continue
 			} else if err != nil || len(input) == 0 || input == nil {
@@ -332,11 +330,13 @@ func (c *GitCollection) Filter(confs []Config) (*GitCollection, error) {
 
 			ctx := context.Background()
 
+			// evaluate a policy and query on config file
 			rs, err := r.Eval(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "(%s): evaluating a query of a %s", op, coll.Name)
 			}
 
+			// display all variables from rego file if result set isn't 0
 			if len(rs) != 0 {
 				for _, busu := range rs {
 					for _, miki := range busu.Expressions {
