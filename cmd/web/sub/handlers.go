@@ -57,8 +57,7 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 
 	// write in json file also the file count in repo and count of programming langs used
 	coll.FileCount = e.gitCollectionFiles.FileCount
-	coll.ProgrammingLanguages = e.gitCollectionFiles.ProgrammingLanguages
-	coll.UnknownProgrammingLanguages = e.gitCollectionFiles.UnknownProgrammingLanguages
+	coll.Language = e.gitCollectionFiles.Language
 
 	// create a json file
 	f, err := coll.ToJSONFile()
@@ -121,8 +120,7 @@ func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 
 	// write in json file also the file count in repo and count of programming langs used
 	coll.FileCount = e.gitCollectionFiles.FileCount
-	coll.ProgrammingLanguages = e.gitCollectionFiles.ProgrammingLanguages
-	coll.UnknownProgrammingLanguages = e.gitCollectionFiles.UnknownProgrammingLanguages
+	coll.Language = e.gitCollectionFiles.Language
 
 	// create a json file
 	f, err := coll.ToJSONFile()

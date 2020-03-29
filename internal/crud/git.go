@@ -57,9 +57,10 @@ type GitCollection struct {
 	BaseHash string `json:"-"`
 	BaseDir  string `json:"-"`
 
-	FileCount                   int      `json:"file_count"`
-	ProgrammingLanguages        []string `json:"file_extensions"`
-	UnknownProgrammingLanguages []string `json:"unknown_file_extensions"`
+	FileCount       int `json:"file_count"`
+	ConfigFileCount int `json:"config_file_count"`
+
+	Language map[string]int `json:"language"`
 
 	Policy *file `json:"-"` // string representation of content of a .rego file
 
@@ -127,7 +128,7 @@ func GetGitCollection(url, hash, dir string) (*GitCollection, error) {
 	var name, content string
 	// retrieve files from specific dir
 	if dir != "" {
-		coll.Coll, coll.FileCount, coll.ProgrammingLanguages, coll.UnknownProgrammingLanguages, err = retrieveFromDir(url, coll.BaseHash, dir, tree)
+		coll.Coll, coll.FileCount, coll.Language, err = retrieveFromDir(url, coll.BaseHash, dir, tree)
 		if err != nil {
 			return nil, errors.Wrapf(err, "(%s): retrieving list of files", op)
 		}
@@ -140,7 +141,7 @@ func GetGitCollection(url, hash, dir string) (*GitCollection, error) {
 
 		coll.BaseDir = dir
 	} else { // retrieve files from root dir
-		coll.Coll, coll.FileCount, coll.ProgrammingLanguages, coll.UnknownProgrammingLanguages, err = retrieveFromRoot(url, coll.BaseHash, tree)
+		coll.Coll, coll.FileCount, coll.Language, err = retrieveFromRoot(url, coll.BaseHash, tree)
 		if err != nil {
 			return nil, errors.Wrapf(err, "(%s): retrieving list of files", op)
 		}
@@ -164,13 +165,13 @@ func GetGitCollection(url, hash, dir string) (*GitCollection, error) {
 }
 
 // retrieveFromDir returns a collection that has all files from a repo in a specific dir.
-// It returns the collection of files in a git specific dir, the count of files, the slice of programming languages, and slice of unknown pr langs.
-func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, int, []string, []string, error) {
+// It returns the collection of files in a git specific dir, the count of files, the slice of programming languages, and slice of unknown pr langs,
+// also it returns the map of language and count of files that language use.
+func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, int, map[string]int, error) {
 	var coll []file
 	var err error
 	var count int
-	var langs []string
-	var unknownLangs []string
+	var langs = make(map[string]int)
 
 	err = tree.Files().ForEach(func(f *object.File) error {
 		if strings.Contains(f.Name, dir) {
@@ -195,15 +196,12 @@ func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, int, []s
 			if co.Extension == "" { // if can't determine ext by name then lookup it's content
 				co.Extension, _ = enry.GetLanguageByContent(f.Name, []byte(co.Content))
 				if co.Extension == "" {
-					unknownLangs = append(unknownLangs, f.Name)
 					co.Extension = "Unknown"
 				}
 			}
 
-			// check if language is already added to list, if no then add it
-			if !util.In(langs, co.Extension) {
-				langs = append(langs, co.Extension)
-			}
+			// add the count of each language file used
+			langs[co.Extension]++
 
 			coll = append(coll, co)
 			count++
@@ -212,20 +210,20 @@ func retrieveFromDir(url, hash, dir string, tree *object.Tree) ([]file, int, []s
 		return nil
 	})
 	if err != nil {
-		return nil, 0, nil, nil, err
+		return nil, 0, nil, err
 	}
 
-	return coll, count, langs, unknownLangs, nil
+	return coll, count, langs, nil
 }
 
 // retrieveFromRoot returns a collection that has all files from a repo in a root dir.
-// It returns the collection of files in a git root dir, the count of files, the slice of programming languages, and slice of unknown pr langs.
-func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, int, []string, []string, error) {
+// It returns the collection of files in a git root dir, the count of files, the slice of programming languages, and slice of unknown pr langs,
+// also it returns the map of language and count of files that language use.
+func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, int, map[string]int, error) {
 	var coll []file
 	var err error
 	var count int
-	var langs []string
-	var unknownLangs []string
+	var langs = make(map[string]int)
 
 	err = tree.Files().ForEach(func(f *object.File) error {
 		co := file{}
@@ -249,15 +247,12 @@ func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, int, []strin
 		if co.Extension == "" { // if can't determine ext by name then lookup it's content
 			co.Extension, _ = enry.GetLanguageByContent(f.Name, []byte(co.Content))
 			if co.Extension == "" {
-				unknownLangs = append(unknownLangs, f.Name)
 				co.Extension = "Unknown"
 			}
 		}
 
-		// check if language is already added to list, if no then add it
-		if !util.In(langs, co.Extension) {
-			langs = append(langs, co.Extension)
-		}
+		// add the count of each language file used
+		langs[co.Extension]++
 
 		coll = append(coll, co)
 		count++
@@ -265,10 +260,10 @@ func retrieveFromRoot(url, hash string, tree *object.Tree) ([]file, int, []strin
 		return nil
 	})
 	if err != nil {
-		return nil, 0, nil, nil, err
+		return nil, 0, nil, err
 	}
 
-	return coll, count, langs, unknownLangs, nil
+	return coll, count, langs, nil
 }
 
 // findPolicy searches for a policy .rego file in a git repository specific dir,
@@ -366,6 +361,7 @@ func (c *GitCollection) Filter(confs []Config) (*GitCollection, error) {
 			} else if err != nil || len(input) == 0 || input == nil {
 				return nil, errors.Wrapf(err, "(%s): converting %s file to json", op, coll.Name)
 			}
+			newColl.ConfigFileCount++ // count the number of filtered files
 
 			// create a new rego object
 			r := rego.New(
