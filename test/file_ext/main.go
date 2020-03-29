@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	lang, safe := enry.GetLanguageByExtension("sras/dasd/rqwr/r-123/main.churs")
+	lang, safe := enry.GetLanguageByExtension("Dockerfile")
 	fmt.Println(lang, safe)
 }

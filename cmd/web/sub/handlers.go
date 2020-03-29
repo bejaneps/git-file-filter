@@ -22,7 +22,8 @@ var (
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
-// handleRegexpGET handles upcoming requests from webapp filter page.
+// handleRegexpGET handles upcoming requests from webapp filter page,
+// when posting a json form not file.
 func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 	// check if user searched a repository or no
 	if e.gitCollectionFiles == nil {
@@ -54,6 +55,11 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 
 	e.gitCollectionConfigs = coll // save to cache
 
+	// write in json file also the file count in repo and count of programming langs used
+	coll.FileCount = e.gitCollectionFiles.FileCount
+	coll.ProgrammingLanguages = e.gitCollectionFiles.ProgrammingLanguages
+	coll.UnknownProgrammingLanguages = e.gitCollectionFiles.UnknownProgrammingLanguages
+
 	// create a json file
 	f, err := coll.ToJSONFile()
 	if err != nil {
@@ -67,7 +73,8 @@ func (e *env) handleRegexpGET(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, f.Name(), time.Now(), f)
 }
 
-// handleRegexpPOST handles upcoming requests from webapp filter page.
+// handleRegexpPOST handles upcoming requests from webapp filter page,
+// when posting a json file, not form.
 func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 	// check if user searched a repository or no
 	if e.gitCollectionFiles == nil {
@@ -111,6 +118,11 @@ func (e *env) handleRegexpPOST(w http.ResponseWriter, r *http.Request) {
 	}
 
 	e.gitCollectionConfigs = coll // save to cache
+
+	// write in json file also the file count in repo and count of programming langs used
+	coll.FileCount = e.gitCollectionFiles.FileCount
+	coll.ProgrammingLanguages = e.gitCollectionFiles.ProgrammingLanguages
+	coll.UnknownProgrammingLanguages = e.gitCollectionFiles.UnknownProgrammingLanguages
 
 	// create a json file
 	f, err := coll.ToJSONFile()
