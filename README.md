@@ -1,3 +1,5 @@
+Project didn't get any payment from scammer: https://www.freelancer.com/u/Charlotte0427 (Skype: live:realgentle0427)
+
 # Git File Filter
 
 A webapp that filters git repository files using regexp.
